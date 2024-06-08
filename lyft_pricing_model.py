@@ -89,13 +89,8 @@ class Marketplace:
         return f"Lyft: {attributes})"
 
 def rider_finds_driver(driver_pay):
-    # this needs to be smarter; tried an s-curve, but the parameters don't match. Instead, will use a linear function
-    # L = 1 # max value is 100% match rate
-    # k = 0.166 # curve growth rate; this was calculated as an average given the 2 points we know: 
-    #         # $22 wage --> 93% match, $19 wage --> 60% match
-    #         # the k values for both points fall within 0.002 of each other, meaning a nice fit to the S curve.
-    # x0 = 50 # midpoint of the curve; we'll assume that the min is 0 because below some price, no driver would accept a ride. 
-    # L / (1 + np.exp(-k * (driver_pay - x0)))
+    # this could be smarter; tried a logistic function to approximate s-curve, but can't get the parameters to match known points. 
+    # Instead, will use a linear function
     
     # if it falls in the known range, use a linear function based on those two points. 
     if 19 >= driver_pay >= 22:
@@ -105,7 +100,8 @@ def rider_finds_driver(driver_pay):
         return random.random() <= y
     
     # if it's above $22, need to change the function to shallower line a la top of S-curve, because can't go over 100%, 
-    # also assume that not all rides will be successful either because drivers don't feel it's enough or b/c logistical issues (bugs, driver not paying attention, etc.)
+    # also assume that not all rides will be successful either because drivers don't feel it's enough 
+    # or b/c logistical issues (bugs, driver not paying attention, etc.)
     elif driver_pay > 22:
         m = (0.97 - 0.93) / (24 - 22) # ASSUMPTION; $24 will raise by a further 4%; "curve" flattens off
         b = 0.49
@@ -118,20 +114,12 @@ def rider_finds_driver(driver_pay):
     elif driver_pay >= 15:
         m = (0.6 - 0.3) / (19 - 15) 
         b = -0.825
-        # m = (0.6 - 0.4) / (19 - 15) 
-        # b = -0.35
         y = m * driver_pay + b
         return random.random() <= y
         
     # ASSUMPTION that below a given price, especially below prevailing wage drivers just won't take the ride (will use Uber or another service)
     else: 
         return False
-
-    if lyft_take == 6:
-        return random.random() <= 0.6 # 60% chance of finding a ride
-    
-    if lyft_take == 3:
-        return random.random() <= 0.93 # 93% chance of finding a ride
 
 # doing core logic by month, since all the input figures (churn, rides/month) were given monthly
 def simulate_month(lyft):
@@ -245,8 +233,6 @@ for driver_rider_scenario in max_driver_rider_scenarios:
             for key in year:
                 sum_dict[key] += year[key] 
         averages = {key: value / NUM_YEARS_TO_SIMULATE for key, value in sum_dict.items()}
-
-        # print(json.dumps(averages))
         
         # record the max number of drivers/riders, lyft take, and net revenue
 
